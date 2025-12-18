@@ -1,0 +1,17 @@
+/* 1️⃣ Import Leaflet CSS first */
+@import "leaflet/dist/leaflet.css";
+
+/* 2️⃣ Tailwind directives */
+@import "tailwindcss";
+
+/* 3️⃣ Optional: global styles for the map container */
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+.leaflet-container {
+  width: 100%;
+  height: 100%;
+}
