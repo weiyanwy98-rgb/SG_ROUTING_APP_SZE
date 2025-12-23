@@ -2,7 +2,7 @@ import SearchableDropdown from "./SearchableDropdown";
 export default function Sidebar({
   /* ===== Function 1 ===== */
   serverStatus,
-
+  serverStatusMsg,
   /* ===== Function 2 ===== */
   allRoadTypes,
   // selectedRoadTypes,
@@ -14,6 +14,11 @@ export default function Sidebar({
   setSearchRouteForm,
   addOriginalDestination,
   addDestination,
+  removeOriginalDestination,
+  removeDestination,
+  searchRouteMsg,
+  searchRoute,
+  clearMap,
   // origin,
   // destination,
   // onSearchRoute,
@@ -62,6 +67,13 @@ export default function Sidebar({
           Add Marker: {addMarker ? "On" : "Off"}
         </button>
       </div>
+      {/* Display error messages */}
+      {serverStatusMsg && (
+        <div className={`pb-2 text-sm font-medium ${serverStatusMsg.type === "error" ? "text-red-600" : "text-green-600"}`}>
+          {serverStatusMsg.message}
+        </div>
+      )}
+
 
 
       {/* ================= Function 2 ================= */}
@@ -89,14 +101,29 @@ export default function Sidebar({
 
       {/* ================= Function 3 ================= */}
       <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-        <h3 className="font-semibold text-green-700 mb-2">Search Route</h3>
+        <div className="flex items-center justify-between w-full">
+          <h3 className="font-semibold text-green-700 mb-2">Search Route</h3>
+          <button className="w-20 bg-blue-400 hover:bg-blue-600 text-white text-sm rounded-md"
+          onClick={clearMap}
+          >
+            Clear Map
+          </button>
+        </div>
 
         <div className="mb-2">
           <div className="flex items-center justify-between w-full">
             <label className="text-sm font-medium">Origin</label>
-            <button className="w-15 bg-green-600 hover:bg-green-700 text-white text-sm rounded-md" onClick={addOriginalDestination}>
-              Add
-            </button>
+            <div className="space-x-2">
+              <button className="w-10 bg-red-500 hover:bg-red-600 text-white text-sm rounded-md"
+                onClick={removeOriginalDestination}>
+                clear
+              </button>
+              <button className="w-10 bg-green-600 disabled:bg-gray-400 hover:bg-green-700 text-white text-sm rounded-md"
+                onClick={addOriginalDestination}
+                disabled={!clickedLatLng}>
+                save
+              </button>
+            </div>
           </div>
           <input
             type="text"
@@ -105,16 +132,25 @@ export default function Sidebar({
               clickedLatLng ? `${clickedLatLng[0].toFixed(5)}, ${clickedLatLng[1].toFixed(5)}` : "Click map to select Origin"}
             readOnly
             placeholder="Click map to select origin"
-            className="w-full border rounded-md px-2 py-1 text-sm bg-gray-100 "
+            className={`w-full border rounded-md px-2 py-1 text-sm ${searchRouteForm.startPt.lat ? "bg-green-200" : "bg-gray-100"}`}
           />
         </div>
 
         <div className="mb-2">
           <div className="flex items-center justify-between w-full">
             <label className="text-sm font-medium">Destination</label>
-            <button className="w-15 bg-green-600 hover:bg-green-700 text-white text-sm rounded-md" onClick={addDestination}>
-              Add
-            </button>
+            <div className="space-x-2">
+              <button className="w-10 bg-red-500 hover:bg-red-600 text-white text-sm rounded-md"
+                onClick={removeDestination}>
+                clear
+              </button>
+              <button className="w-10 bg-green-600 disabled:bg-gray-400 hover:bg-green-700 text-white text-sm rounded-md"
+                onClick={addDestination}
+                disabled={!clickedLatLng} //check if clickedLatLng is set
+              >
+                save
+              </button>
+            </div>
           </div>
           <input
             type="text"
@@ -122,17 +158,23 @@ export default function Sidebar({
               clickedLatLng ? `${clickedLatLng[0].toFixed(5)}, ${clickedLatLng[1].toFixed(5)}` : "Click map to select Origin"}
             readOnly
             placeholder="Click map to select destination"
-            className="w-full border rounded-md px-2 py-1 text-sm bg-gray-100"
+            className={`w-full border rounded-md px-2 py-1 text-sm ${searchRouteForm.endPt.lat ? "bg-green-200" : "bg-gray-100"}`}
           />
         </div>
 
         <button
-          //onClick={onSearchRoute}
-          //disabled={!origin || !destination}
+          onClick={searchRoute}
+          disabled={!searchRouteForm.startPt.lat || !searchRouteForm.endPt.lat}
           className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white text-sm py-2 rounded-md"
         >
           Search Route
         </button>
+        {/* Display error messages */}
+        {searchRouteMsg && (
+          <div className={`pb-2 text-sm font-medium ${searchRouteMsg.type === "error" ? "text-red-600" : "text-green-600"}`}>
+            {searchRouteMsg.message}
+          </div>
+        )}
       </div>
       {/* ================= Function 4 ================= */}
       <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
