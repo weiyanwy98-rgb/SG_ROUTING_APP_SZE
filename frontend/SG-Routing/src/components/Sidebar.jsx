@@ -5,10 +5,12 @@ export default function Sidebar({
   serverStatusMsg,
   /* ===== Function 2 ===== */
   allRoadTypes,
-  // selectedRoadTypes,
-  // onRoadTypeToggle,
-  // onRoadTypeView,
-
+  selectedRoadTypes,
+  clearSelectedRoadTypes,
+  roadTypesData,
+  onRoadTypeToggle,
+  roadTypesEnabled,
+  roadMsg,
   /* ===== Function 3 ===== */
   searchRouteForm,
   setSearchRouteForm,
@@ -19,6 +21,9 @@ export default function Sidebar({
   searchRouteMsg,
   searchRoute,
   clearMap,
+  RouteMode,
+  selectRouteMode,
+  setSelectRouteMode,
   // origin,
   // destination,
   // onSearchRoute,
@@ -78,24 +83,42 @@ export default function Sidebar({
 
       {/* ================= Function 2 ================= */}
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-        <h3 className="font-semibold text-blue-700 mb-2">Road Types</h3>
-
+        <div className="flex items-center justify-between w-full">
+          <h3 className="font-semibold text-blue-700 mb-2">Road Types</h3>
+          <button className="w-10 bg-blue-400 hover:bg-blue-700 text-white text-sm rounded-md"
+            onClick={clearSelectedRoadTypes}
+          >
+            clear
+          </button>
+        </div>
         {/* Dropdown to view road type */}
 
 
         {/* Checkbox selection */}
         <div className="max-h-32 overflow-y-auto space-y-1">
-          {allRoadTypes.map((type) => (
-            <label key={type} className="flex items-center text-sm">
-              <input
-                type="checkbox"
-                //checked={selectedRoadTypes.includes(type)}
-                // onChange={() => onRoadTypeToggle(type)}
-                className="mr-2"
-              />
-              {type}
-            </label>
-          ))}
+          {roadTypesEnabled ?
+            (allRoadTypes.map((type) => (
+              <label key={type} className="flex items-center text-sm">
+                <input
+                  type="checkbox"
+                  checked={selectedRoadTypes.includes(type)}
+                  onChange={() => onRoadTypeToggle(type)}
+                  className="mr-2"
+                />
+                <span className="w-3 h-3 rounded-full mr-1" style={{ backgroundColor: roadTypesData[type]?.color }}></span>
+                {type}
+              </label>
+            )))
+            :
+            <span>Loading...</span>
+          }
+
+          {/* Display error messages */}
+          {roadMsg && (
+            <div className={`pb-2 text-sm font-medium ${roadMsg.type === "error" ? "text-red-600" : "text-green-600"}`}>
+              {roadMsg.message}
+            </div>
+          )}
         </div>
       </div>
 
@@ -104,10 +127,26 @@ export default function Sidebar({
         <div className="flex items-center justify-between w-full">
           <h3 className="font-semibold text-green-700 mb-2">Search Route</h3>
           <button className="w-20 bg-blue-400 hover:bg-blue-600 text-white text-sm rounded-md"
-          onClick={clearMap}
+            onClick={clearMap}
           >
             Clear Map
           </button>
+        </div>
+        {/* Route Modes */}
+        <div className="flex gap-2">
+          {Object.entries(RouteMode).map(([key, mode]) => (
+            <button
+              key={key}
+              onClick={() => setSelectRouteMode(key)}
+              className={`px-3 py-1 rounded-md text-sm border
+              ${selectRouteMode === key
+                  ? "bg-blue-600 text-white"
+                  : "bg-white text-gray-700 hover:bg-gray-100"
+                }`}
+            >
+              {mode.label}
+            </button>
+          ))}
         </div>
 
         <div className="mb-2">
@@ -269,6 +308,6 @@ export default function Sidebar({
         </button>
       </div>
 
-    </div>
+    </div >
   );
 }

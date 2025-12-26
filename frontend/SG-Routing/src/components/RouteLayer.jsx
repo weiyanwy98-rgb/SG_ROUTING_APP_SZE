@@ -1,6 +1,6 @@
 import { GeoJSON, Marker, Popup } from "react-leaflet";
 import { renderPopup } from "../schema/popup_render";
-import { POPUP_SCHEMA } from "../schema/popup_schema";
+import { ROUTE_SCHEMA} from "../schema/popup_schema";
 
 export default function RouteLayer({ searchRouteForm, routeLayers }) {
     return (
@@ -39,7 +39,7 @@ export default function RouteLayer({ searchRouteForm, routeLayers }) {
                         data={lineFeatures}
                         style={{ color: layer.color || "blue", weight: 4 }}
                         onEachFeature={(feature, layerObj) => {
-                            const popupHtml = renderPopup(feature.properties, POPUP_SCHEMA);
+                            const popupHtml = renderPopup(feature.properties, ROUTE_SCHEMA);
                             layerObj.bindPopup(popupHtml);
                         }}
                     />

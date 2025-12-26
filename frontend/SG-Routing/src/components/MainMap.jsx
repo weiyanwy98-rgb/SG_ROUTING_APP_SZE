@@ -3,6 +3,7 @@ import { MapContainer, Marker, TileLayer, ZoomControl } from "react-leaflet";
 import BlockageLayer from "./BlockageLayer";
 import RouteLayer from "./RouteLayer";
 import MapInteractions from "./MapInteractions";
+import RoadLayers from "./RoadTypesLayer";
 
 export default function MainMap(props) {
     const {
@@ -10,6 +11,7 @@ export default function MainMap(props) {
         zoom,
         blockageLayers,
         routeLayers,
+        roadTypesLayers,
         selectedBlockage,
         setSelectedBlockage,
         clickedLatLng,
@@ -35,10 +37,13 @@ export default function MainMap(props) {
             {clickedLatLng && <Marker position={clickedLatLng} />}
 
             {/* Pure layers */}
+            <RoadLayers
+                layers={roadTypesLayers}
+            />
             <RouteLayer
-            searchRouteForm={searchRouteForm} 
-            routeLayers={routeLayers}
-             />
+                searchRouteForm={searchRouteForm}
+                routeLayers={routeLayers}
+            />
             <BlockageLayer
                 blockageLayers={blockageLayers}
                 selectedBlockage={selectedBlockage}

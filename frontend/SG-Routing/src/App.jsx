@@ -8,7 +8,7 @@ export const API = "https://routing-web-service-ityenzhnyq-an.a.run.app";
 ;
 
 export default function App() {
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   //Retry
   const [retry, setRetry] = useState(false);
@@ -17,6 +17,7 @@ export default function App() {
   const defaultZoom = 12;
   const [blockageLayers, setBlockageLayers] = useState([]);
   const [routeLayers, setRouteLayers] = useState([]);
+  const [roadTypesLayers, setRoadTypesLayers] = useState([]);
 
   const [center, setCenter] = useState(SingaporeCoordinate); // Default to Singapore
   const [zoom, setZoom] = useState(defaultZoom);
@@ -32,12 +33,39 @@ export default function App() {
   //road types
   const [roadMsg, setRoadMsg] = useState("");
   const [roadTypes, setRoadTypes] = useState([]);
+  const [roadTypesData, setRoadTypesData] = useState([]);
+  const [selectedRoadTypes, setSelectedRoadTypes] = useState([]);
+  const [roadTypesEnabled, setRoadTypesEnabled] = useState(true);
   //search routes
   const [searchRouteForm, setSearchRouteForm] = useState({
     startPt: { "long": null, "lat": null, "description": "start point" },
     endPt: { "long": null, "lat": null, "description": "" }
   });
   const [searchRouteMsg, setSearchRouteMsg] = useState("");
+  const [searchLock, setSearchLock] = useState(true);
+  const RouteMode = {
+    default: {
+      road: ["primary", "secondary", "motorway", "tertiary", "residential", "trunk", "cycleway"],
+      label: "Default"
+    },
+    motorRoute: {
+      road: ["primary", "secondary", "tertiary", "motorway", "residential", "trunk"],
+      label: "Car"
+    },
+    cycleRoute: {
+      road: ["cycleway", "residential"],
+      label: "Cycle"
+    },
+    walkRoute: {
+      road: ["footway"],
+      label: "Walk"
+    }
+
+  }
+  const [selectRouteMode, setSelectRouteMode] = useState("default");
+
+
+
   //blockage
   const [blockageList, setBlockageList] = useState([]);
   const [blockageNameList, setBlockageNameList] = useState([]);
@@ -61,17 +89,33 @@ export default function App() {
   useEffect(() => {
     getAllRoadTypes();
     getAllBlockages();
-
   }, []);
 
   useEffect(() => {
     console.log("blockageNameList UPDATED:", blockageNameList);
   }, [blockageNameList]);
 
+  useEffect(() => {
+    console.log("getting new road layers", roadTypesLayers)
+    getRoadLayers();
+  }, [selectedRoadTypes])
 
+  useEffect(() => {
+    console.log("Selected Mode", selectRouteMode)
+    console.log("select mode", RouteMode[selectRouteMode])
+  }, [selectRouteMode])
+
+  //call if search routes are set and road mode is change
+  useEffect(() => {
+
+    if (!searchLock) {
+      console.log("Searching new route with new road mode")
+      searchRoute();
+    }
+  }, [selectRouteMode])
 
   // ----- Fetch Server Status with retry -----
-  const fetchServerStatus = async (maxRetries = 10, delayMs = 1000) => {
+  const fetchServerStatus = async (maxRetries = 10, delayMs = 10000) => {
     setLoading(true);
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
@@ -81,63 +125,160 @@ export default function App() {
 
         if (text.trim() === "Wait") {
           console.log(`Server says 'Wait', retrying status... (${attempt})`);
-          await new Promise(resolve => setTimeout(resolve, delayMs));
-          continue;
         }
-
-        const isOnline = text.trim() === "true" || res.ok;
-        console.log("Server status:", isOnline);
-        setServerStatus(isOnline);
-        break; // exit loop
-
+        else {
+          const isOnline = text.trim() === "true" || res.ok;
+          console.log("Server status:", isOnline);
+          setServerStatus(isOnline);
+          break; // exit loop
+        }
       } catch (err) {
-        console.error("Failed to fetch server status:", err);
+        console.error("Failed to fetch server status:", attempt);
         if (attempt === maxRetries) {
           setServerStatusMsg({ type: "error", message: "Failed to fetch server status" });
           setServerStatus(false);
-          setTimeout(() => setServerStatusMsg(""), 5000);
-        } else {
-          await new Promise(resolve => setTimeout(resolve, delayMs));
+          //setTimeout(() => setServerStatusMsg(""), 5000);
         }
       }
+      // 10s delay BEFORE next attempt (always)
+      if (attempt < maxRetries) {
+        await new Promise(resolve => setTimeout(resolve, delayMs));
+      }
     }
+
     setLoading(false);
   };
 
   // ----- Fetch Road Types with retry -----
+  // ----- Predefined color palette (20 colors) -----
+  const ROAD_TYPE_COLORS = [
+    "#e6194b", "#3cb44b", "#ffe119", "#4363d8", "#f58231",
+    "#911eb4", "#46f0f0", "#f032e6", "#bcf60c", "#fabebe",
+    "#008080", "#e6beff", "#9a6324", "#fffac8", "#800000",
+    "#aaffc3", "#808000", "#ffd8b1", "#000075", "#808080"
+  ];
+
+  // ----- Fetch Road Types (with retry) -----
   const getAllRoadTypes = async (maxRetries = 10, delayMs = 1000) => {
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    let attempt = 0;
+
+    while (attempt < maxRetries) {
       try {
-        const res = await fetch(`https://nyc-bus-routing-k3q4yvzczq-an.a.run.app/allAxisTypes`);
+        attempt++;
+
+        const res = await fetch(
+          "https://nyc-bus-routing-k3q4yvzczq-an.a.run.app/allAxisTypes"
+        );
         const text = await res.text();
 
         if (text.trim() === "Wait") {
-          console.log(`Server says 'Wait', retrying road types... (${attempt})`);
+          console.warn(`Server busy, retrying... (${attempt}/${maxRetries})`);
           await new Promise(resolve => setTimeout(resolve, delayMs));
           continue;
         }
 
-        let data;
+        let roadTypes;
         try {
-          data = JSON.parse(text);
+          roadTypes = JSON.parse(text);
         } catch {
-          throw new Error("Invalid JSON from road types API: " + text);
+          throw new Error("Invalid JSON from road types API");
         }
 
-        setRoadTypes(data);
-        break; // exit loop
+        setRoadTypes(roadTypes);
 
+        await getAllRoadTypesData(roadTypes);
+
+        return; // success
       } catch (err) {
         console.error("Failed to fetch road types:", err);
-        if (attempt === maxRetries) {
-          setRoadMsg({ type: "error", message: "Failed to fetch road types" });
-          setTimeout(() => setRoadMsg(""), 5000);
-        } else {
-          await new Promise(resolve => setTimeout(resolve, delayMs));
+
+        if (attempt >= maxRetries) {
+          setRoadMsg({
+            type: "error",
+            message: "Failed to fetch road types"
+          });
+          //setTimeout(() => setRoadMsg(""), 5000);
+          return;
         }
+
+        await new Promise(resolve => setTimeout(resolve, delayMs));
       }
     }
   };
+
+  // ----- Fetch GeoJSON for each road type + assign color -----
+  const getAllRoadTypesData = async (allRoadTypes) => {
+    const dataMap = {};
+    setRoadTypesEnabled(false);
+    for (let i = 0; i < allRoadTypes.length; i++) {
+      const roadType = allRoadTypes[i];
+      try {
+        //console.log("Fetching road type data:", roadType);
+
+        const res = await fetch(
+          `https://routing-web-service-ityenzhnyq-an.a.run.app/axisType/${roadType}`
+        );
+        const text = await res.text();
+
+        if (text.trim() === "Wait") {
+          console.warn(`Skipping ${roadType}: server busy`);
+          continue;
+        }
+
+        let geojson;
+        try {
+          geojson = JSON.parse(text);
+        } catch {
+          throw new Error(`Invalid GeoJSON for ${roadType}`);
+        }
+
+        // Assign color from palette (loop if more than 20 road types)
+        const color = ROAD_TYPE_COLORS[i % ROAD_TYPE_COLORS.length];
+
+        dataMap[geojson.axis_type] = {
+          type: geojson.axis_type,
+          color,
+          data: geojson
+        };
+
+      } catch (err) {
+        console.error(`Failed to fetch road type: ${roadType}`, err);
+      }
+    }
+    setRoadTypesEnabled(true);
+    setRoadTypesData(dataMap);
+  };
+
+
+  const onRoadTypeToggle = (type) => {
+
+    setSelectedRoadTypes(prev => {
+      if (prev.includes(type)) {
+        // Remove type
+        return prev.filter(t => t !== type);
+      } else {
+        // Add type
+        return [...prev, type];
+      }
+    });
+  };
+
+  const getRoadLayers = async () => {
+    const roadLayers = selectedRoadTypes
+      .map(type => ({
+        type,
+        data: roadTypesData[type].data,
+        color: roadTypesData[type].color
+      }))
+      .filter(layer => layer.data); // safety
+
+    setRoadTypesLayers(roadLayers)
+  }
+
+  const clearSelectedRoadTypes = () => {
+    setSelectedRoadTypes([]);
+  }
+
 
 
   const updateSelectedCoordinate = (latlng) => {
@@ -199,8 +340,8 @@ export default function App() {
       } catch (err) {
         console.error(`Attempt ${attempt} failed :`, err.message);
         if (attempt === maxRetries) {
-          setBlockageMsg({ type: "error", message: err.message });
-          setTimeout(() => setBlockageMsg(""), 5000);
+          setBlockageMsg({ type: "error", message: "Failed to fetch blockage" });
+          // setTimeout(() => setBlockageMsg(""), 5000);
         } else {
           await new Promise((resolve) => setTimeout(resolve, delayMs));
         }
@@ -213,49 +354,66 @@ export default function App() {
 
 
   const onAddBlockage = async () => {
-
+    const maxRetries = 10;
+    const delayMs = 1000;
     if (!checkAddBlockageFormComplete()) {
       setAddBlockageMsg({ type: "error", message: "Please complete all fields." });
       setTimeout(() => setAddBlockageMsg(""), 5000);
       return;
     }
-    try {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
 
-      console.log("Adding blockage with data:", JSON.stringify(addBlockageForm));
-      const res = await fetch(
-        `https://routing-web-service-ityenzhnyq-an.a.run.app/blockage`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(addBlockageForm),
+        console.log("Adding blockage with data:", JSON.stringify(addBlockageForm));
+        const res = await fetch(
+          `https://routing-web-service-ityenzhnyq-an.a.run.app/blockage`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(addBlockageForm),
+          }
+        );
+
+        //Check if duplicate exist
+        const text = await res.text();
+        if (text.trim().startsWith("Duplicate")) throw new Error("Blockage name already exists.");
+        else if (text.trim() === "Wait") {
+          console.log(`Server says 'Wait', retrying... (${attempt})`);
+          await new Promise((resolve) => setTimeout(resolve, delayMs));
+          continue; // try again
         }
-      );
-      if (!res.ok) throw new Error("Network response was not ok");
 
-      //Check if duplicate exist
-      const text = await res.text();
-      if (text.trim().startsWith("Duplicate")) throw new Error("Blockage name already exists.");
+        console.log("Blockage added successfully.");
+        setAddBlockageMsg({ type: "success", message: "Blockage added successfully." });
+        // Clear form
+        setAddBlockageForm({
+          point: { "long": null, "lat": null },
+          name: "",
+          description: "",
+          radius: 0,
+        });
+        setClickedLatLng(null); // clear selected point on map
 
-      console.log("Blockage added successfully.");
-      setAddBlockageMsg({ type: "success", message: "Blockage added successfully." });
-      // Clear form
-      setAddBlockageForm({
-        point: { "long": null, "lat": null },
-        name: "",
-        description: "",
-        radius: 0,
-      });
-      setClickedLatLng(null); // clear selected point on map
-
-      getAllBlockages();
-      // Clear message after 5s
-      setTimeout(() => setAddBlockageMsg(""), 5000);
-    } catch (err) {
-      console.error("Failed to add blockage:", err);
-      setAddBlockageMsg({ type: "error", message: "Failed to add blockage. " + err.message });
-      setTimeout(() => setAddBlockageMsg(""), 5000);
+        getAllBlockages();
+        // Clear message after 5s
+        setTimeout(() => setAddBlockageMsg(""), 5000);
+        // Set new route
+        if (!searchLock) {
+          console.log("Searching new route with new road mode")
+          searchRoute();
+        }
+        break;
+      } catch (err) {
+        console.error("Failed to add blockage:", err);
+        if (attempt === maxRetries) {
+          setAddBlockageMsg({ type: "error", message: "Failed to add blockage. " + err.message });
+        }
+        else {
+          await new Promise((resolve) => setTimeout(resolve, delayMs));
+        }
+      }
     }
   }
 
@@ -294,41 +452,53 @@ export default function App() {
 
   const onDeleteBlockage = async () => {
     console.log("Deleting blockage:", selectedBlockage);
-    try {
-      setLoading(true); // show loading screen
-      const res = await fetch(
-        `https://routing-web-service-ityenzhnyq-an.a.run.app/blockage/${encodeURIComponent(selectedBlockage)}`,
-        { method: "DELETE" }
-      );
+    const maxRetries = 10
+    const delayMS = 1000
+    for (const attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        setLoading(true); // show loading screen
+        const res = await fetch(
+          `https://routing-web-service-ityenzhnyq-an.a.run.app/blockage/${encodeURIComponent(selectedBlockage)}`,
+          { method: "DELETE" }
+        );
 
-      if (!res.ok) throw new Error("Network response was not ok");
-      console.log(`Blockage '${selectedBlockage}' deleted successfully.`);
-      setBlockageMsg({ type: "success", message: `Blockage '${selectedBlockage}' deleted successfully` });
-      setSelectedBlockage(null);
+        const text = await res.text()
+        if (text.trim() === "Wait") {
+          console.log(`Server says 'Wait', retrying... (${attempt})`);
+          await new Promise((resolve) => setTimeout(resolve, delayMs));
+          continue; // try again
+        }
+        console.log(`Blockage '${selectedBlockage}' deleted successfully.`);
+        setBlockageMsg({ type: "success", message: `Blockage '${selectedBlockage}' deleted successfully` });
+        setSelectedBlockage(null);
 
-      getAllBlockages();
+        getAllBlockages();
 
-      // Clear message after 5s
-      setTimeout(() => setBlockageMsg(""), 5000);
+        // Clear message after 5s
+        setTimeout(() => setBlockageMsg(""), 5000);
+        break;
 
-    } catch (err) {
-      console.error("Failed to delete blockage:", err);
-      setBlockageMsg({ type: "error", message: `Failed to delete blockage '${selectedBlockage?.properties?.name}'` });
-      setSelectedBlockage(null);
-      setTimeout(() => setBlockageMsg(""), 5000);
+      } catch (err) {
+        console.error("Failed to delete blockage:", err);
+        if (attempt === maxRetries) {
+          setBlockageMsg({ type: "error", message: `Failed to delete blockage '${selectedBlockage?.properties?.name}'` });
+          setSelectedBlockage(null);
+          //setTimeout(() => setBlockageMsg(""), 5000);
+        }
+      }
     }
   };
 
   //Search route functions
 
-  const clearMap = ()=>{
-    setRouteLayers([]);
+  const clearMap = () => {
     removeDestination();
     removeOriginalDestination();
     setClickedLatLng(null);
   }
   const addOriginalDestination = () => {
     console.log("Adding original destination:", clickedLatLng);
+    setRouteLayers([]);
     setSearchRouteForm((prev) => ({
       ...prev,
       startPt: { "long": clickedLatLng[1], "lat": clickedLatLng[0], "description": "" }
@@ -337,6 +507,7 @@ export default function App() {
 
   const addDestination = () => {
     console.log("Adding destination:", clickedLatLng);
+    setRouteLayers([])
     setSearchRouteForm((prev) => ({
       ...prev,
       endPt: { "long": clickedLatLng[1], "lat": clickedLatLng[0], "description": "" }
@@ -345,6 +516,8 @@ export default function App() {
 
   const removeOriginalDestination = () => {
     console.log("Removing original destination");
+    setRouteLayers([]);
+    setSearchLock(true);
     setSearchRouteForm((prev) => ({
       ...prev,
       startPt: { "long": null, "lat": null, "description": "" }
@@ -353,49 +526,92 @@ export default function App() {
 
   const removeDestination = () => {
     console.log("Removing destination");
+    setRouteLayers([]);
+    setSearchLock(true);
     setSearchRouteForm((prev) => ({
       ...prev,
       endPt: { "long": null, "lat": null, "description": "" }
     }))
   };
 
-  const searchRoute = async () => {
-    console.log("Searching route from", searchRouteForm.startPt, "to", searchRouteForm.endPt);
+  const searchRoute = async (maxRetries = 10, delayMs = 1000) => {
+    console.log("Sending route seth data:", JSON.stringify(searchRouteForm));
+    setRouteLayers([]);
     // Implement route searching logic here
-    try {
-      setLoading(true);
-      console.log("Sending route search request with data:", JSON.stringify(searchRouteForm));
-      //fetch route from API
-      const res = await fetch(
-        `https://routing-web-service-ityenzhnyq-an.a.run.app/route`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(searchRouteForm),
-        }
-      );
-      const text = await res.text();
-      if (!res.ok) throw new Error("Network response was not ok: " + text);
-      //Check if route found
-      if (text.trim().startsWith("No route found")) throw new Error("No route found for the given points.");
+    for (let attempt = 1; attempt <= 10; attempt++) {
+      try {
+        setLoading(true);
+        //console.log("Sending route search request with data:", JSON.stringify(searchRouteForm));
 
-      //Set 
-      setSearchRouteMsg({ type: "success", message: "Route found successfully." });
-      setRouteLayers([{ data: JSON.parse(text) }]);
-      // Clear message after 5s
-      setTimeout(() => setSearchRouteMsg(""), 5000);
-      console.log("Route search successful:", JSON.parse(text));
-      //...
-      setLoading(false);
-    } catch (err) {
-      console.error("Failed to search route:", err);
-      setSearchRouteMsg({ type: "error", message: "Failed to search route. " + err.message });
-      setTimeout(() => setSearchRouteMsg(""), 5000);
-      setLoading(false);
+        // //Change route road type
+        const road_res = await fetch("https://routing-web-service-ityenzhnyq-an.a.run.app/changeValidRoadTypes",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(RouteMode[selectRouteMode].road),
+          }
+        )
+        console.log("Route mode set to", await road_res.text())
+
+        //fetch route from API
+        const res = await fetch(
+          `https://routing-web-service-ityenzhnyq-an.a.run.app/route`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(searchRouteForm),
+          }
+        );
+
+        const text = await res.text();
+        if (!res.ok) throw new Error("Network response was not ok: " + text);
+        //chec if server is ready
+        if (text.trim() === "Wait") {
+          console.log(`Server says 'Wait', retrying status... (${attempt})`);
+          await new Promise(resolve => setTimeout(resolve, delayMs));
+          continue;
+        }
+        //Check if Route exists
+        if (!checkRouteExist(JSON.parse(text))) {
+          throw new Error("No Route Found")
+        }
+        //Set 
+        setSearchRouteMsg({ type: "success", message: "Route found successfully." });
+        setRouteLayers([{ data: JSON.parse(text) }]);
+        setAddMarker(0);
+        // Clear message after 5s
+        setTimeout(() => setSearchRouteMsg(""), 5000);
+        console.log("Route search successful:", JSON.parse(text));
+        //...
+        setLoading(false);
+        setSearchLock(false);
+        break;
+      } catch (err) {
+        console.error("Failed to search route:", err);
+        setSearchRouteMsg({ type: "error", message: "Failed to search route. " + err.message });
+        setTimeout(() => setSearchRouteMsg(""), 5000);
+        setLoading(false);
+        break;
+      }
     }
   }
+
+  const checkRouteExist = (route) => {
+    if (!route || !route.features) return false;
+
+    for (const feature of route.features) {
+      if (feature.geometry?.type === "LineString") {
+        return true; // found at least one LineString
+      }
+    }
+
+    return false; // none found
+  };
+
 
   ///Toggle add marker
 
@@ -422,7 +638,12 @@ export default function App() {
         serverStatus={serverStatus}
         serverStatusMsg={serverStatusMsg}
         allRoadTypes={roadTypes}
-
+        selectedRoadTypes={selectedRoadTypes}
+        clearSelectedRoadTypes={clearSelectedRoadTypes}
+        roadTypesData={roadTypesData}
+        onRoadTypeToggle={onRoadTypeToggle}
+        roadTypesEnabled={roadTypesEnabled}
+        roadMsg={roadMsg}
         //search routes
         clearMap={clearMap}
         searchRouteForm={searchRouteForm}
@@ -431,6 +652,9 @@ export default function App() {
         addDestination={addDestination}
         removeDestination={removeDestination}
         removeOriginalDestination={removeOriginalDestination}
+        RouteMode={RouteMode}
+        selectRouteMode={selectRouteMode}
+        setSelectRouteMode={setSelectRouteMode}
         searchRoute={searchRoute}
         searchRouteMsg={searchRouteMsg}
         //blockage
@@ -457,6 +681,7 @@ export default function App() {
         <MainMap
           blockageLayers={blockageLayers}
           routeLayers={routeLayers}
+          roadTypesLayers={roadTypesLayers}
           center={center} zoom={zoom}
           selectedBlockage={selectedBlockage}
           setSelectedBlockage={setSelectedBlockage}
