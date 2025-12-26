@@ -8,10 +8,10 @@ export const API = "https://routing-web-service-ityenzhnyq-an.a.run.app";
 ;
 
 export default function App() {
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(false);  
 
-  //Retry
-  const [retry, setRetry] = useState(false);
+  //cache
+  
   //map
   const SingaporeCoordinate = [1.364237, 103.782208];
   const defaultZoom = 12;
@@ -453,7 +453,7 @@ export default function App() {
   const onDeleteBlockage = async () => {
     console.log("Deleting blockage:", selectedBlockage);
     const maxRetries = 10
-    const delayMS = 1000
+    const delayMs = 1000
     for (const attempt = 1; attempt <= maxRetries; attempt++) {
       try {
         setLoading(true); // show loading screen
@@ -476,6 +476,12 @@ export default function App() {
 
         // Clear message after 5s
         setTimeout(() => setBlockageMsg(""), 5000);
+
+        // Set new route
+        if (!searchLock) {
+          console.log("Searching new route with new road mode")
+          searchRoute();
+        }
         break;
 
       } catch (err) {

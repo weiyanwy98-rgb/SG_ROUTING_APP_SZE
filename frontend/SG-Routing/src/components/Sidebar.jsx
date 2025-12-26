@@ -64,12 +64,12 @@ export default function Sidebar({
           {serverStatus ? "Server: Online" : "Server: Offline"}
         </div>
 
-        {/* Add Marker Button */}
+        {/* Enable Marker Button */}
         <button
           className={`${addMarker ? "bg-green-500" : "bg-gray-200"} ${addMarker ? "hover:bg-green-600" : "hover:bg-gray-300"} text-gray-800 text-sm py-0.5 px-2 rounded-md`}
           onClick={toggleAddMarker}
         >
-          Add Marker: {addMarker ? "On" : "Off"}
+          Enable Marker: {addMarker ? "On" : "Off"}
         </button>
       </div>
       {/* Display error messages */}

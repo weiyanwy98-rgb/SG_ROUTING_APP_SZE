@@ -1,8 +1,16 @@
-# NYC Bus Trip Viewer - Test Procedures
+# SG Routing Application – Test Procedures
 
 ## Overview
 
-This document outlines the testing procedures for the NYC Bus Trip Viewer application.
+This document defines the test procedures for the **SG Routing Application**, which allows users to visualize road networks, calculate routes, and manage road blockages dynamically on an interactive map.
+
+The test cases validate:
+- Server readiness handling
+- Road type visualization
+- Route search by transport mode
+- Map interaction
+- Blockage creation and deletion
+- Error handling and retry logic
 
 ---
 
@@ -11,332 +19,246 @@ This document outlines the testing procedures for the NYC Bus Trip Viewer applic
 ### Prerequisites
 - Node.js (v18 or higher)
 - npm (v9 or higher)
-- Modern web browser (Chrome, Firefox, Safari, Edge)
-- Internet connection (for API calls and map tiles)
-- Backend server running on `http://localhost:5000`
-- Frontend server running on `http://localhost:5173`
+- Modern web browser (Chrome, Firefox, Edge)
+- Internet connection (map tiles & API access)
+- Backend Routing Server running
+- Frontend React Application running
 
-### Test Data
-- **Backend API URL**: `http://localhost:5000/api/bus_trip`
-- **Base API URL**: `https://nyc-bus-engine-k3q4yvzczq-an.a.run.app/api/bus_trip`
-- **Sample Vehicle IDs**: NYCT_4614, NYCT_4615, NYCT_4616
-- **Sample Line Names**: Bx2, M1, M15, Q1
+### URLs
+- **Frontend URL**: `http://localhost:5173`
+- **Routing API Base URL**: `https://routing-web-service-ityenzhnyq-an.a.run.app`
 
 ---
 
 ## Test Cases
 
+---
+
 ### TC-001: Server Readiness Check
 
-**Objective**: Verify that the application correctly detects server availability
+**Objective**: Verify that the application correctly detects routing server availability.
 
-**User Story**: US-005, US-011
+**User Story**: US-001
 
 **Pre-conditions**:
-- Application is loaded in browser
-- Server may or may not be ready
+- Application is loaded
+- Server may be ready or busy
 
 **Test Steps**:
-1. Open the application URL in a browser
-2. Observe the server status indicator at the top of the page
+1. Open the application in a browser
+2. Observe the server status indicator
+3. Wait for automatic refresh (10 seconds)
 
 **Expected Results**:
-- If server is ready: Green "Server: Online" badge is displayed
-- If server unavailable: Alert shows "Server: Offline" error
-- Status automatically updates every 30 seconds
+- Green badge when server is ready
+- Red badge when server is unavailable or busy
+- Status updates automatically
 
 **Pass/Fail Criteria**:
-- Pass: Status indicator accurately reflects nyc server state
-- Fail: Status indicator is incorrect or doesn't update
+- Pass: Status reflects server state correctly
+- Fail: Status is incorrect or does not update
 
 ---
 
-### TC-002: Load Vehicle References List
+### TC-002: Load All Road Types
 
-**Objective**: Verify that the vehicle references list loads correctly
+**Objective**: Verify that all available road types are fetched and displayed.
 
-**User Story**: US-001, US-003
+**User Story**: US-002
 
 **Pre-conditions**:
-- backend server is ready
+- Server is ready
 
 **Test Steps**:
-1. Navigate to the Vehicle selector section
-2. Click on "Search vehicle..." button
-3. Observe the dropdown list
+1. Load the application
+2. Observe the Road Types section
 
 **Expected Results**:
-- Dropdown opens with search input
-- List contains approximately 220 vehicle IDs
+- Road types list is displayed
+- Each road type appears once
+- Loading indicator disappears after fetch
 
 **Pass/Fail Criteria**:
-- Pass: List loads instantly, all vehicles displayed
-- Fail: List doesn't load, takes too long, or shows errors
+- Pass: All road types are shown correctly
+- Fail: List is empty, duplicated, or errors occur
 
 ---
 
-### TC-003: Search for Specific Vehicle
+### TC-003: Toggle Road Type Visibility
 
-**Objective**: Verify that vehicle search functionality works correctly
+**Objective**: Verify that selecting road types displays corresponding routes on the map.
+
+**User Story**: US-002
+
+**Pre-conditions**:
+- Road types loaded successfully
+
+**Test Steps**:
+1. Select a road type checkbox
+2. Observe the map
+3. Deselect the checkbox
+
+**Expected Results**:
+- Routes appear when selected
+- Routes disappear when deselected
+- Each road type has a consistent color
+
+**Pass/Fail Criteria**:
+- Pass: Map updates correctly
+- Fail: Routes do not appear or disappear correctly
+
+---
+
+### TC-004: Search Route (Default Mode)
+
+**Objective**: Verify route calculation using default routing mode.
 
 **User Story**: US-003
 
 **Pre-conditions**:
-- Backend is ready
-- Vehicle list is loaded
-
-**Test Steps**:
-1. Click "Search vehicle..." button
-2. Type "NYCT_4614" in the search box
-3. Observe filtered results
-4. Select the vehicle from results
-
-**Expected Results**:
-- Search filters results as user types
-- Only matching vehicles are shown
-- Search is case-insensitive
-- Selected vehicle appears in the button
-
-**Pass/Fail Criteria**:
-- Pass: Search filters instantly and accurately
-- Fail: Search is slow, inaccurate, or doesn't work
-
----
-
-### TC-004: Load Vehicle Trip Data
-
-**Objective**: Verify that vehicle trip data loads and displays on map
-
-**User Story**: US-001, US-007, US-010
-
-**Pre-conditions**:
-- Backend server is ready
-- Vehicle "NYCT_4614" is selected
-
-**Test Steps**:
-1. With vehicle selected, click "Load Trip" button
-2. Observe loading state
-3. Wait for data to load
-4. Observe map display
-
-**Expected Results**:
-- Shows loading message
-- Route appears on map as red line or markers
-- Map automatically centered to the route
-
-**Pass/Fail Criteria**:
-- Pass: Data loads successfully and displays correctly
-- Fail: Data fails to load, map doesn't update, or errors occur
-
----
-
-### TC-005: Load Published Line Names List
-
-**Objective**: Verify that the bus line names list loads correctly
-
-**User Story**: US-002, US-004
-
-**Pre-conditions**:
-- Backend server is ready
-
-**Test Steps**:
-1. Navigate to the Line selector section
-2. Click on "Search line..." button
-3. Observe the dropdown list
-
-**Expected Results**:
-- Dropdown opens with search input
-- List contains bus line names (Bx1, M1, etc.)
-- Line count is displayed in the description
-
-**Pass/Fail Criteria**:
-- Pass: List loads instantly, all lines displayed
-- Fail: List doesn't load, takes too long, or shows errors
-
----
-
-### TC-006: Search for Specific Bus Line
-
-**Objective**: Verify that bus line search functionality works correctly
-
-**User Story**: US-004
-
-**Pre-conditions**:
-- Backend server is ready
-- Line list is loaded
-
-**Test Steps**:
-1. Click "Search line..." button
-2. Type "Bx2" in the search box
-3. Observe filtered results
-4. Select the line from results
-
-**Expected Results**:
-- Search filters results as user types
-- Only matching lines are shown
-- Selected line appears in the button
-
-**Pass/Fail Criteria**:
-- Pass: Search filters instantly and accurately
-- Fail: Search is slow, inaccurate, or doesn't work
-
----
-
-### TC-007: Load Bus Line Trip Data
-
-**Objective**: Verify that bus line trip data loads and displays on map
-
-**User Story**: US-002, US-009, US-010
-
-**Pre-conditions**:
 - Server is ready
-- Line "Bx2" is selected
+- Map is visible
 
 **Test Steps**:
-1. With line selected, click "Load Trip" button
-2. Observe loading state
-3. Wait for data to load
-4. Observe map display
+1. Click Enable Marker
+2. Click on the map to select origin
+3. Save origin
+4. Click on the map to select destination
+5. Save destination
+6. Click “Search Route”
 
 **Expected Results**:
-- "Loading..." message is shown
-- Routes appear on map as blue lines (may be multiple buses)
-- Map automatically centered to bus lines
+- Route appears on the map
+- Route connects origin and destination
+- Route information popup is available
 
 **Pass/Fail Criteria**:
-- Pass: Data loads successfully and displays correctly
-- Fail: Data fails to load, map doesn't update, or errors occur
+- Pass: Route is displayed correctly
+- Fail: No route or incorrect route displayed
 
 ---
 
+### TC-005: Search Route by Transport Mode
 
+**Objective**: Verify route calculation for car, cycle, and walk modes.
 
-**Objective**: Verify that map panning functionality works correctly
+**User Story**: US-003
+
+**Pre-conditions**:
+- Origin and destination selected
+
+**Test Steps**:
+1. Select Car mode
+2. Search route
+3. Repeat for Cycle and Walk modes
+
+**Expected Results**:
+- Routes differ by transport mode
+- Only allowed road types are used per mode
+- Map updates instantly
+
+**Pass/Fail Criteria**:
+- Pass: Correct routes per mode
+- Fail: Same route regardless of mode
+
+---
+
+### TC-006: Map Interaction – Pan & Zoom
+
+**Objective**: Verify map navigation functionality.
 
 **User Story**: US-006
 
 **Pre-conditions**:
-- Application loaded
 - Map is visible
 
 **Test Steps**:
-1. Click and hold on the map
-2. Drag the mouse to move the map
-3. Release mouse button
-4. Observe map position
+1. Drag the map
+2. Zoom in and out
+3. Observe tile loading
 
 **Expected Results**:
-- Map pans smoothly while dragging
-- Map follows mouse movement accurately
-- No lag or stuttering
-- New map tiles load as needed
+- Smooth panning and zooming
+- No lag or freezing
+- Tiles load correctly
 
 **Pass/Fail Criteria**:
-- Pass: Pan works smoothly and accurately
-- Fail: Pan is laggy, inaccurate, or doesn't work
+- Pass: Map interaction is smooth
+- Fail: Lag, freeze, or broken tiles
 
 ---
 
-### TC-08: Click Map Marker for Details
+### TC-007: View Route & Road Feature Details
 
-**Objective**: Verify that clicking map markers shows detailed information
+**Objective**: Verify popup information for routes and roads.
 
-**User Story**: US-009
+**User Story**: US-004
 
 **Pre-conditions**:
-- Route data is loaded on map
-- Route has point features (markers)
+- Routes are displayed
 
 **Test Steps**:
-1. Click on a route marker (circle point)
-2. Observe popup display
-3. Read popup content
-4. Click elsewhere to close popup
+1. Click on a route or road segment
+2. Observe popup
 
 **Expected Results**:
-- Popup appears immediately on click
-- Popup displays all available properties
-- Properties are formatted as key-value pairs
-- Popup is readable and well-formatted
-- Popup closes when clicking elsewhere
+- Popup appears immediately
+- Shows road name, type, and distance
+- Information is readable
 
 **Pass/Fail Criteria**:
-- Pass: Popup displays correctly with all information
-- Fail: Popup doesn't appear or information is missing
+- Pass: Popup displays correct data
+- Fail: Popup missing or incorrect
 
 ---
 
-### TC-09: Live or Storaged Data
+### TC-008: Add Blockage
 
-**Objective**: Verify if data is from NYC server or storaged data in backend
+**Objective**: Verify that users can add a blockage.
+
+**User Story**: US-006
+
+**Pre-conditions**:
+- Server is ready
+
+**Test Steps**:
+1. Click on "Enable Marker”
+2. Click on the map
+3. Enter blockage name, radius, and description
+4. Click “Add Blockage”
+
+**Expected Results**:
+- Blockage marker appears on map
+- Radius circle is shown
+- Blockage is added to the list
+
+**Pass/Fail Criteria**:
+- Pass: Blockage is added successfully
+- Fail: Blockage does not appear or error occurs
+
+---
+
+### TC-009: Delete Blockage
+
+**Objective**: Verify that users can delete an existing blockage.
 
 **User Story**: US-008
 
 **Pre-conditions**:
-- Backend is ready
+- At least one blockage exists
 
 **Test Steps**:
-1. Check if NYC server is running
-2. Retrieve data from backend storage if NYC server is down
+1. Select a blockage from dropdown or map
+2. Click “Delete Blockage”
+3. Confirm deletion
 
 **Expected Results**:
-- Application function as normally
+- Blockage is removed from map
+- Blockage list updates
+- Route is recalculated if applicable
 
 **Pass/Fail Criteria**:
-- Pass: All information displays correctly
-- Fail: Information is missing, incorrect, or unreadable
+- Pass: Blockage removed correctly
+- Fail: Blockage remains or errors occur
 
 ---
-
-### TC-010: Error Handling - Invalid Vehicle
-
-**Objective**: Verify that application handles invalid vehicle IDs gracefully
-
-**User Story**: US-013
-
-**Pre-conditions**:
-- backend server is ready
-- nyc server is ready
-
-**Test Steps**:
-1. Manually call API with invalid vehicle ID
-2. Observe error handling
-
-**Expected Results**:
-- Error is caught and logged to console
-- Application doesn't crash
-- User-friendly error message is displayed (if applicable)
-- User can retry with valid vehicle
-
-**Pass/Fail Criteria**:
-- Pass: Error is handled gracefully
-- Fail: Application crashes or shows unclear errors
-
----
-
-
-```markdown
-**Test Execution Date**: [Date]
-**Tester**: [Name]
-**Build Version**: [Version/Commit Hash]
-**Environment**: [Browser, OS]
-
-**Test Results Summary**:
-- Total Test Cases: XX
-- Passed: XX
-- Failed: XX
-- Blocked: XX
-- Not Executed: XX
-
-**Pass Rate**: XX%
-
-**Critical Issues**: [List any P1 bugs]
-
-**Notes**: [Any additional observations]
-```
-
----
-
-**Document Version**: 1.0
-**Last Updated**: December 2, 2024
-**Created By**: NYC Bus Trip Viewer QA Team

@@ -2,11 +2,10 @@
 
 ## Overview
 
-This document describes how the NYC backend service communicates with the external NYC API to retrieve live or storaged data
+This document describes how the frontend service communicate with external routing service API to retrieve data.
 
-**NYC URL:** `https://nyc-bus-engine-k3q4yvzczq-an.a.run.app/api/bus_trip`
-
-**Backend URL:** `http://localhost:5000/api/bus_trip`
+**Routing URL:** `https://routing-web-service-ityenzhnyq-an.a.run.app`
+**NYC URL :** `https://nyc-bus-routing-k3q4yvzczq-an.a.run.app`
 
 ---
 
@@ -14,13 +13,11 @@ This document describes how the NYC backend service communicates with the extern
 
 ### 1. Server Readiness Check
 
-**Purpose:** Check if the NYC Bus API server is ready and operational. The server requires a cold start and may not be available 24/7.
+**Purpose:** Check if the Routing server is working and operational
 
 **Endpoint:** `GET /ready`
 
-**NYC URL:** `https://nyc-bus-engine-k3q4yvzczq-an.a.run.app/api/bus_trip/ready`
-
-**Backend URL:** `http://localhost:5000/api/bus_trip/ready`
+**Routing URL:** `https://routing-web-service-ityenzhnyq-an.a.run.app/ready`
 
 **Request Method:** `GET`
 
@@ -40,45 +37,42 @@ This document describes how the NYC backend service communicates with the extern
 **Response Format:**
 ```typescript
 {
-  status: string;
+  string
 }
 ```
 
 **Example Request:**
 ```bash
-curl -X GET http://localhost:5000/api/bus_trip/ready
+curl -X GET https://routing-web-service-ityenzhnyq-an.a.run.app/ready
 ```
 
 **Example Response:**
 #### Server Ready
 ```json
 {
-  "status": "Ready"
+  "Ready"
 }
 ```
 #### Server Starting Up
 ```json
 {
-  "status": "Wait"
+  "Wait"
 }
 ```
 
 **Usage Notes:**
-- Check if data are retrieved from BE storage or from nyc server
-- The server may require several seconds to complete cold start
-- Recommended to poll this endpoint every 30 seconds
+- Check if server is working and operational
+- Recommended to poll this endpoint every 10 seconds, maximun of 10 attempts
 
 ---
 
-### 2. Get Vehicle References
+### 2. Get all road types
 
-**Purpose:** Retrieve a list of all available vehicle reference IDs in the NYC bus system.
+**Purpose:** Retrieve a list of all road types.
 
-**Endpoint:** `GET /getVehRef`
+**Endpoint:** `GET /allAxisTypes`
 
-**NYC URL:** `https://nyc-bus-engine-k3q4yvzczq-an.a.run.app/api/bus_trip/getVehRef`
-
-**Backend URL:** `http://localhost:5000/api/bus_trip/getVehRef`
+**NYC URL:** `https://nyc-bus-routing-k3q4yvzczq-an.a.run.app/allAxisTypes`
 
 **Request Method:** `GET`
 
@@ -101,34 +95,31 @@ string[]
 **Example Response:**
 ```json
 [
-  "NYCT_4614",
-  "NYCT_4615",
-  "NYCT_4616",
+    "bridleway",
+    "cycleway",
+    "footway"
   ...
 ]
 ```
 
 **Example Request:**
 ```bash
-curl -X GET http://localhost:5000/api/bus_trip/getVehRef
+curl -X GET https://routing-web-service-ityenzhnyq-an.a.run.app/allAxisTypes
 ```
 
 **Usage Notes:**
-- Returns approximately 220 vehicle references from nyc server or backend local storage
-- Response is stored in backend local storage
-- Used to populate the vehicle selector dropdown
+- Returns a list of road type from the external server
+- Used to populate the road type checkboxes
 
 ---
 
-### 3. Get Bus Trip by Vehicle Reference
+### 3. Get Road Types used by routing algorithm
 
-**Purpose:** Retrieve GeoJSON trip data for a specific vehicle by its reference ID.
+**Purpose:** Retrieve list of road types used by the routing algorithm
 
-**Endpoint:** `GET /getBusTripByVehRef/{vehicleRef}`
+**Endpoint:** `GET /validAxisTypes`
 
-**NYC URL:** `https://nyc-bus-engine-k3q4yvzczq-an.a.run.app/api/bus_trip/getBusTripByVehRef/{vehicleRef}`
-
-**Backend URL:** `http://localhost:5000/api/bus_trip/getBusTripByVehRef/{vehicleRef}`
+**NYC URL:** `https://routing-web-service-ityenzhnyq-an.a.run.app/validAxisTypes`
 
 **Request Method:** `GET`
 
@@ -140,122 +131,43 @@ curl -X GET http://localhost:5000/api/bus_trip/getVehRef
 ```
 
 **Path Parameters:**
-- `vehicleRef` (string, required): The vehicle reference ID (e.g., "NYCT_4614")
+- None
 
-**Response Format:** GeoJSON FeatureCollection
+**Response Format:** 
+- JSON array of strings
 
 **Response Schema:**
 ```typescript
 {
-  type: string;
-  features: Array<{
-    type: string;
-    geometry: {
-      type: string;
-      coordinates: number[] | number[][];
-    };
-    properties: Record<string, any>;
-  }>;
+  string[]
 }
 ```
 
 **Example Request:**
 ```bash
-curl -X GET http://localhost:5000/api/bus_trip/getBusTripByVehRef/NYCT_4614
-```
-
-**Example Response:**
-```json
-{
-  "type": "FeatureCollection",
-  "features": [
-    {
-      "type": "Feature",
-      "geometry": {
-        "type": "LineString",
-        "coordinates": [
-          [-74.006, 40.7128],
-          [-74.007, 40.7138]
-        ]
-      },
-      "properties": {
-        "vehicleRef": "NYCT_4614",
-        "publishedLineName": "Bx2",
-        "direction": "0",
-        "timestamp": "2024-12-02T10:00:00Z"
-      }
-    }
-  ]
-}
-```
-
-**Usage Notes:**
-- Returns route geometry and trip metadata from nyc server or backend local storage
-- Response is saved in backend local storage for each vehicle
-
----
-
-### 4. Get Published Line Names
-
-**Purpose:** Retrieve a list of all published bus line names in the NYC bus system.
-
-**Endpoint:** `GET /getPubLineName`
-
-**NYC URL:** `https://nyc-bus-engine-k3q4yvzczq-an.a.run.app/api/bus_trip/getPubLineName`
-
-**Backend URL:** `http://localhost:5000/api/bus_trip/getPubLineName`
-
-**Request Method:** `GET`
-
-**Request Headers:**
-```json
-{
-  "Content-Type": "application/json"
-}
-```
-
-**Request Parameters:** None
-
-**Response Format:** JSON array of strings
-
-**Response Schema:**
-```typescript
-string[]
+curl -X GET https://routing-web-service-ityenzhnyq-an.a.run.app/validAxisTypes
 ```
 
 **Example Response:**
 ```json
 [
-  "Bx1",
-  "Bx2",
-  "M1",
-  "M15",
-  "Q1",
-  ...
+ "footway",
+ "residential"
 ]
 ```
 
-**Example Request:**
-```bash
-curl -X GET http://localhost:5000/api/bus_trip/getPubLineName
-```
-
 **Usage Notes:**
-- Returns all active bus line names from nyc server or backend local storage
-- Response is stored in Backend local storage
-- Used to populate the line selector dropdown
+- Returns road types used in routing algorithm
 
 ---
 
-### 5. Get Bus Trip by Published Line Name
+### 4. Get GEO json data of a specific road type
 
-**Purpose:** Retrieve GeoJSON trip data for all buses operating on a specific line.
+**Purpose:** Retrieve a Geojson data of a specific road type
 
-**Endpoint:** `GET /getBusTripByPubLineName/{lineName}`
+**Endpoint:** `GET /axisType/:RoadType`
 
-**Full URL:** `https://nyc-bus-engine-k3q4yvzczq-an.a.run.app/api/bus_trip/getBusTripByPubLineName/{lineName}`
-
-**Backend URL:** `http://localhost:5000/api/bus_trip/getBusTripByPubLineName/{lineName}`
+**Routing URL:** `https://routing-web-service-ityenzhnyq-an.a.run.app/axisType/:RoadType`
 
 **Request Method:** `GET`
 
@@ -266,15 +178,14 @@ curl -X GET http://localhost:5000/api/bus_trip/getPubLineName
 }
 ```
 
-**Path Parameters:**
-- `lineName` (string, required): The published line name (e.g., "Bx2")
+**Request Parameters:** - `RoadType` (string, required): (e.g., "motorway")
 
 **Response Format:** GeoJSON FeatureCollection
 
 **Response Schema:**
 ```typescript
 {
-  type: string;
+ type: string;
   features: Array<{
     type: string;
     geometry: {
@@ -286,44 +197,399 @@ curl -X GET http://localhost:5000/api/bus_trip/getPubLineName
 }
 ```
 
+**Example Response:**
+```json
+{
+    "axis_type": "motorway",
+    "type": "FeatureCollection",
+    "features": [
+        {
+            "type": "Feature",
+            "geometry": {
+                "type": "LineString",
+                "coordinates": [
+                    [
+                        103.897400,
+                        1.297156
+                    ],
+                    [
+                        103.898384,
+                        1.297519
+                    ]
+                ]
+            },
+            "properties": {
+                "road name": "East Coast Parkway",
+                "road type": "motorway",
+                "distance": 116
+            }
+        }
+    ]
+}
+```
+
 **Example Request:**
 ```bash
-curl -X GET http://localhost:5000/api/bus_trip/getBusTripByPubLineName/Bx2
+curl -X GET https://routing-web-service-ityenzhnyq-an.a.run.app/axisType/:RoadType
+```
+
+**Usage Notes:**
+- Return Geojson data of a specific road type
+
+---
+
+### 5. Change Road Type in Routing algorithm
+
+**Purpose:** Change the road type used in the routing algorithm
+
+**Endpoint:** `POST /changeValidRoadTypes`
+
+**Routing URL:** `https://routing-web-service-ityenzhnyq-an.a.run.app/changeValidRoadTypes`
+
+**Request Method:** `POST`
+
+**Request Headers:**
+```json
+{
+  "Content-Type": "application/json"
+}
+```
+
+**Path Parameters:**
+- none
+
+**Response Format:** 
+- JSON array of strings
+
+**Response Schema:**
+```typescript
+{
+  string[]
+}
+```
+
+**Example Request:**
+```bash
+curl -X GET https://routing-web-service-ityenzhnyq-an.a.run.app/changeValidRoadTypes
 ```
 
 **Example Response:**
 ```json
 {
-  "type": "FeatureCollection",
-  "features": [
-    {
-      "type": "Feature",
-      "geometry": {
-        "type": "LineString",
-        "coordinates": [
-          [-74.006, 40.7128],
-          [-74.007, 40.7138],
-          [-74.008, 40.7148]
-        ]
-      },
-      "properties": {
-        "publishedLineName": "Bx2",
-        "direction": "0",
-        "routeId": "BX2",
-        "tripId": "BX2_123",
-        "timestamp": "2024-12-02T10:00:00Z"
-      }
-    }
-  ]
+  ["motorway"]
 }
 ```
 
 **Usage Notes:**
-- Returns route geometry for all active buses on the specified line from nyc server or backend local storage
-- May contain multiple features (one per active bus)
-- Response is stored in Backend local storage
+- Change the road types used in the routing algorithm
 
----
+
+### 6. Routing Algorithm
+
+**Purpose:** Find the fastest route to reach from origin to destination
+
+**Endpoint:** `POST /route`
+
+**Routing URL:** `https://routing-web-service-ityenzhnyq-an.a.run.app/route`
+
+**Request Method:** `POST`
+
+**Request Headers:**
+```json
+{
+  "Content-Type": "application/json"
+}
+```
+
+**Path Parameters:**
+- none
+
+**Response Format:** 
+- GEOJSON features
+
+**Response Schema:**
+```typescript
+{
+  {
+ type: string;
+  features: Array<{
+    type: string;
+    geometry: {
+      type: string;
+      coordinates: number[] | number[][];
+    };
+    properties: Record<string, any>;
+  }>;
+}
+}
+```
+
+**Example Request:**
+```bash
+curl -X POST https://routing-web-service-ityenzhnyq-an.a.run.app/route
+```
+
+**Example Response:**
+```json
+{
+      "app_name": "MY_ROUTING (time taken : 48ms)",
+    "type": "FeatureCollection",
+    "features": [
+        {
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
+                    103.864517,
+                    1.383342
+                ]
+            },
+            "properties": {
+                "point type": "start"
+            }
+        },
+    ]
+    ...
+}
+```
+
+**Usage Notes:**
+- Find the fastest road from origin to destination
+
+### 7. Change Road Type in Routing algorithm
+
+**Purpose:** Retrieve GEOJSON data of all the blockages
+
+**Endpoint:** `GET /blockage`
+
+**Routing URL:** `https://routing-web-service-ityenzhnyq-an.a.run.app/blockage`
+
+**Request Method:** `GET`
+
+**Request Headers:**
+```json
+{
+  "Content-Type": "application/json"
+}
+```
+
+**Path Parameters:**
+- none
+
+**Response Format:** 
+- JSON array of strings
+
+**Response Schema:**
+```typescript
+{
+  {
+    "items": "blockages",
+    "type": "FeatureCollection",
+    "features": []
+}
+}
+```
+
+**Example Request:**
+```bash
+curl -X GET https://routing-web-service-ityenzhnyq-an.a.run.app/blockage
+```
+
+**Example Response:**
+```json
+{
+  {
+    "items": "blockages",
+    "type": "FeatureCollection",
+    "features": [
+        {
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
+                    103.870239,
+                    1.364579
+                ]
+            },
+            "properties": {
+                "name": "block 1",
+                "description": "test",
+                "distance (meters)": 200
+            }
+        }
+    ]
+}
+}
+```
+
+**Usage Notes:**
+- Get geojson data of all the blockages
+
+
+### 8. Add blockages
+
+**Purpose:** Add new blockages
+
+**Endpoint:** `POST /blockage`
+
+**Routing URL:** `https://routing-web-service-ityenzhnyq-an.a.run.app/blockage`
+
+**Request Method:** `POST`
+
+**Request Headers:**
+```json
+{
+  "Content-Type": "application/json"
+}
+```
+
+**Path Parameters:**
+- none
+
+**Response Format:** 
+- GEOJSON features
+
+**Response Schema:**
+```typescript
+{
+  {
+ type: string;
+  features: Array<{
+    type: string;
+    geometry: {
+      type: string;
+      coordinates: number[] | number[][];
+    };
+    properties: Record<string, any>;
+  }>;
+}
+}
+}
+```
+
+**Example Request:**
+```bash
+curl -X POST https://routing-web-service-ityenzhnyq-an.a.run.app/blockage
+```
+
+**Example Response:**
+```json
+{
+    "items": "blockages",
+    "type": "FeatureCollection",
+    "features": [
+        {
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
+                    103.870239,
+                    1.364579
+                ]
+            },
+            "properties": {
+                "name": "block 1",
+                "description": "test",
+                "distance (meters)": 200
+            }
+        },
+        {
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
+                    103.519836,
+                    1.352083
+                ]
+            },
+            "properties": {
+                "name": "block 2",
+                "description": "description 2",
+                "distance (meters)": 200
+            }
+        }
+    ]
+}
+```
+
+**Usage Notes:**
+- Add new blockages
+
+
+### 9. Delete blockage
+
+**Purpose:** Delete blockage
+
+**Endpoint:** `DELETE /blockage/:BlockageName`
+
+**Routing URL:** `https://routing-web-service-ityenzhnyq-an.a.run.app//blockage/:BlockageName`
+
+**Request Method:** `DELETE`
+
+**Request Headers:**
+```json
+{
+  "Content-Type": "application/json"
+}
+```
+
+**Path Paramete(rs:**
+- blockageName (string), eg("block 1")
+
+**Response Format:** 
+- GEOJSON
+
+**Response Schema:**
+```typescript
+{
+  {
+ type: string;
+  features: Array<{
+    type: string;
+    geometry: {
+      type: string;
+      coordinates: number[] | number[][];
+    };
+    properties: Record<string, any>;
+  }>;
+}
+}
+```
+
+**Example Request:**
+```bash
+curl -X DELETE https://routing-web-service-ityenzhnyq-an.a.run.app/blockage/:BlockageName
+```
+
+**Example Response:**
+```json
+{
+  {
+    "items": "blockages",
+    "type": "FeatureCollection",
+    "features": [
+        {
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
+                    103.519836,
+                    1.352083
+                ]
+            },
+            "properties": {
+                "name": "block 2",
+                "description": "description 2",
+                "distance (meters)": 200
+            }
+        }
+    ]
+}
+}
+```
+
+**Usage Notes:**
+- Delete blockage
 
 ## Error Handling
 
@@ -337,62 +603,4 @@ All endpoints may return the following error responses:
 | 400 | Bad Request | Invalid request parameters |
 | 404 | Not Found | Resource not found (invalid vehicle/line ID) |
 | 500 | Internal Server Error | Server-side error |
-| 503 | Service Unavailable | Server not ready (cold start) |
-
-### Error Response Format Example
-
-```json
-{
-  "timestamp": "2025-12-02T06:02:39.692+00:00",
-  "status": 404,
-  "error": "Error message description",
-  "path": "/api/bus_trip/readyy"
-}
-```
---- -->
-
-
-### Storage Benefits
-
-- **Improved Reliablity:** Application still functions even when NYC server is down
-
----
-
-## Authentication
-
-**Current Implementation:** None required
-
-All endpoints are publicly accessible without authentication tokens or API keys.
-
----
-
-### Service Layer Location
-
-All API integrations are implemented in:
-```
-src/app.jsx
-```
-
-### Key Functions
-
-| Function | Endpoint | Purpose |
-|----------|----------|---------|
-| `checkServerReady()` | `/ready` | Check server availability |
-| `getVehicleReferences()` | `/getVehRef` | Get vehicle list |
-| `getBusTripByVehicleRef(vehicleRef)` | `/getBusTripByVehRef/{vehicleRef}` | Get vehicle trip |
-| `getPublishedLineNames()` | `/getPubLineName` | Get line list |
-| `getBusTripByPublishedLineName(lineName)` | `/getBusTripByPubLineName/{lineName}` | Get line trip |
-
---- -->
-
-For API issues or questions:
-- **API Provider:** NYC Bus Engine
-- **Hosting:** Google Cloud Run
-
----
-
-**Document Version:** 1.0
-**Last Updated:** December 2, 2024
-**Author:** Generated for NYC Bus Trip Viewer Application
-External-API-Endpoints.md
-Displaying unnamed.jpg.
+| 503 | Service Unavailable
