@@ -8,10 +8,10 @@ export const API = "https://routing-web-service-ityenzhnyq-an.a.run.app";
 ;
 
 export default function App() {
-  const [loading, setLoading] = useState(false);  
+  const [loading, setLoading] = useState(false);
 
   //cache
-  
+
   //map
   const SingaporeCoordinate = [1.364237, 103.782208];
   const defaultZoom = 12;
@@ -37,6 +37,7 @@ export default function App() {
   const [selectedRoadTypes, setSelectedRoadTypes] = useState([]);
   const [roadTypesEnabled, setRoadTypesEnabled] = useState(true);
   //search routes
+  const [routeDetails, setRouteDetails] = useState([])
   const [searchRouteForm, setSearchRouteForm] = useState({
     startPt: { "long": null, "lat": null, "description": "start point" },
     endPt: { "long": null, "lat": null, "description": "" }
@@ -501,6 +502,8 @@ export default function App() {
     removeDestination();
     removeOriginalDestination();
     setClickedLatLng(null);
+    setRouteLayers([]);
+    setRouteDetails([]);
   }
   const addOriginalDestination = () => {
     console.log("Adding original destination:", clickedLatLng);
@@ -523,6 +526,7 @@ export default function App() {
   const removeOriginalDestination = () => {
     console.log("Removing original destination");
     setRouteLayers([]);
+    setRouteDetails([]);
     setSearchLock(true);
     setSearchRouteForm((prev) => ({
       ...prev,
@@ -533,6 +537,7 @@ export default function App() {
   const removeDestination = () => {
     console.log("Removing destination");
     setRouteLayers([]);
+    setRouteDetails([]);
     setSearchLock(true);
     setSearchRouteForm((prev) => ({
       ...prev,
@@ -542,6 +547,7 @@ export default function App() {
 
   const searchRoute = async (maxRetries = 10, delayMs = 1000) => {
     console.log("Sending route seth data:", JSON.stringify(searchRouteForm));
+    setRouteDetails([]);
     setRouteLayers([]);
     // Implement route searching logic here
     for (let attempt = 1; attempt <= 10; attempt++) {
@@ -588,10 +594,13 @@ export default function App() {
         //Set 
         setSearchRouteMsg({ type: "success", message: "Route found successfully." });
         setRouteLayers([{ data: JSON.parse(text) }]);
+        setRouteDetails(JSON.parse(text).features)
         setAddMarker(0);
         // Clear message after 5s
         setTimeout(() => setSearchRouteMsg(""), 5000);
         console.log("Route search successful:", JSON.parse(text));
+
+
         //...
         setLoading(false);
         setSearchLock(false);
@@ -618,6 +627,23 @@ export default function App() {
     return false; // none found
   };
 
+  const extractRouteDetails = (geojson) => {
+    if (!geojson || !geojson.features) {
+      setRouteDetails([]);
+      return;
+    }
+
+    const streets = geojson.features
+      .filter(f => f.geometry?.type === "LineString")
+      .map(f => ({
+        name: f.properties?.["road name"],
+        type: f.properties?.["road type"],
+        distance: f.properties?.distance
+      }))
+      .filter(r => r.name && r.name !== "NULL");
+
+    setRouteDetails(streets);
+  };
 
   ///Toggle add marker
 
@@ -663,6 +689,7 @@ export default function App() {
         setSelectRouteMode={setSelectRouteMode}
         searchRoute={searchRoute}
         searchRouteMsg={searchRouteMsg}
+        routeDetails={routeDetails}
         //blockage
         handleChangeAddBlockageForm={handleChangeAddBlockageForm}
         onAddBlockage={onAddBlockage}
