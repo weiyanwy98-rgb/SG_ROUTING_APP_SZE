@@ -167,7 +167,7 @@ The test cases validate:
 
 **Objective**: Verify map navigation functionality.
 
-**User Story**: US-006
+**User Story**: US-012
 
 **Pre-conditions**:
 - Map is visible
@@ -212,11 +212,32 @@ The test cases validate:
 
 ---
 
-### TC-008: Add Blockage
+### TC-008: View Route Information
+
+**Objective**: View route information.
+
+**User Story**: US-005
+
+**Pre-conditions**:
+- Routes are displayed
+
+**Test Steps**:
+1. View route details in the side bar, distance, road name and road type
+
+**Expected Results**:
+- Route information displayed in the panel
+
+**Pass/Fail Criteria**:
+- Pass: information displayed correctly
+- Fail: missing information
+
+---
+
+### TC-009: Add Blockage
 
 **Objective**: Verify that users can add a blockage.
 
-**User Story**: US-006
+**User Story**: US-007
 
 **Pre-conditions**:
 - Server is ready
@@ -242,7 +263,7 @@ The test cases validate:
 
 **Objective**: Verify that users can delete an existing blockage.
 
-**User Story**: US-008
+**User Story**: US-009
 
 **Pre-conditions**:
 - At least one blockage exists

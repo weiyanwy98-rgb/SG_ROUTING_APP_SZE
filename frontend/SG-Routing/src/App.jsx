@@ -79,18 +79,21 @@ export default function App() {
     description: ""
   });
   const [blockageMsg, setBlockageMsg] = useState("");
+  const [blockagePoll, setBlockagePoll] = useState(0);
 
   //Lock for button and dropdown
   const [lock, setLock] = useState(false);
   //////////////// EFFECTS ////////////////
   useEffect(() => {
     fetchServerStatus(); // fetch immediately
+    getAllRoadTypes();
   }, []);
 
   useEffect(() => {
-    getAllRoadTypes();
     getAllBlockages();
-  }, []);
+    setTimeout(()=>setBlockagePoll(!blockagePoll), 30000); //fetch every 30sec
+    console.log("fetch blockage")
+  }, [blockagePoll]);
 
   useEffect(() => {
     console.log("blockageNameList UPDATED:", blockageNameList);
@@ -308,7 +311,7 @@ export default function App() {
     const maxRetries = 10;
     const delayMs = 1000;
 
-    setLoading(true);
+    //setLoading(true);
     setBlockageLayers([]);
 
 
@@ -348,7 +351,7 @@ export default function App() {
         }
       }
     }
-    setLoading(false);
+    //setLoading(false);
 
   };
 
@@ -494,6 +497,7 @@ export default function App() {
         }
       }
     }
+    setLoading(false);
   };
 
   //Search route functions
