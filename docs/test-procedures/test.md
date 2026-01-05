@@ -113,7 +113,7 @@ The test cases validate:
 
 **Objective**: Verify route calculation using default routing mode.
 
-**User Story**: US-003
+**User Story**: US-003 US-004
 
 **Pre-conditions**:
 - Server is ready
@@ -143,7 +143,7 @@ The test cases validate:
 
 **Objective**: Verify route calculation for car, cycle, and walk modes.
 
-**User Story**: US-003
+**User Story**: US-004
 
 **Pre-conditions**:
 - Origin and destination selected
@@ -166,7 +166,7 @@ The test cases validate:
 
 **Objective**: View route information.
 
-**User Story**: US-005
+**User Story**: US-006
 
 **Pre-conditions**:
 - Routes are displayed
@@ -187,7 +187,7 @@ The test cases validate:
 
 **Objective**: Verify map navigation functionality.
 
-**User Story**: US-012
+**User Story**: US-013
 
 **Pre-conditions**:
 - Map is visible
@@ -208,22 +208,24 @@ The test cases validate:
 
 ---
 
-### TC-008: View Route & Road Feature Details
+### TC-008: View Route, Road and blockage Feature Details
 
 **Objective**: Verify popup information for routes and roads.
 
-**User Story**: US-004
+**User Story**: US-005, US-006, US-011
 
 **Pre-conditions**:
-- Routes are displayed
+- Server is ready
+- Routes or blockages are displayed 
 
 **Test Steps**:
-1. Click on a route or road segment
+1. Click on a route, road segment or blockage
 2. Observe popup
 
 **Expected Results**:
 - Popup appears immediately
 - Shows road name, type, and distance
+- Shows blockage name, description, and radius
 - Information is readable
 
 **Pass/Fail Criteria**:
@@ -235,7 +237,7 @@ The test cases validate:
 
 **Objective**: Verify that users can view blockages.
 
-**User Story**: US-006
+**User Story**: US-007
 
 **Pre-conditions**:
 - Server is ready
@@ -259,7 +261,7 @@ The test cases validate:
 
 **Objective**: Verify that users can add a blockage.
 
-**User Story**: US-007
+**User Story**: US-009
 
 **Pre-conditions**:
 - Server is ready
@@ -285,7 +287,7 @@ The test cases validate:
 
 **Objective**: Verify that users can delete an existing blockage.
 
-**User Story**: US-009
+**User Story**: US-010
 
 **Pre-conditions**:
 - At least one blockage exists
