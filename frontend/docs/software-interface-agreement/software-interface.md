@@ -62,7 +62,6 @@ curl -X GET https://routing-web-service-ityenzhnyq-an.a.run.app/ready
 
 **Usage Notes:**
 - Check if server is working and operational
-- Recommended to poll this endpoint every 10 seconds, maximun of 10 attempts
 
 ---
 

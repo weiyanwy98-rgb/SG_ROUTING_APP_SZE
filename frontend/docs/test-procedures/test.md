@@ -158,8 +158,8 @@ The test cases validate:
 - Only allowed road types are used per mode
 
 **Pass/Fail Criteria**:
-- Pass: Correct routes per mode
-- Fail: Same route regardless of mode
+- Pass: Correct routes shown per mode
+- Fail: Same route regardless of mode, server unavailable or no route is found
 
 ---
 ### TC-006: View Route Information
@@ -210,7 +210,7 @@ The test cases validate:
 
 ### TC-008: View Route, Road and blockage Feature Details
 
-**Objective**: Verify popup information for routes and roads.
+**Objective**: Verify popup information for routes blockage, and roads.
 
 **User Story**: US-005, US-006, US-011
 
@@ -220,7 +220,8 @@ The test cases validate:
 
 **Test Steps**:
 1. Click on a route, road segment or blockage
-2. Observe popup
+2. Selected blockage radius is highlighted
+3. Observe popup
 
 **Expected Results**:
 - Popup appears immediately
@@ -270,7 +271,8 @@ The test cases validate:
 1. Click on "Enable Marker”
 2. Click on the map
 3. Enter blockage name, radius, and description
-4. Click “Add Blockage”
+4. Check for form completeness
+5. Click “Add Blockage”
 
 **Expected Results**:
 - Blockage marker appears on map
@@ -278,7 +280,7 @@ The test cases validate:
 - Blockage is added to the list
 
 **Pass/Fail Criteria**:
-- Pass: Blockage is added successfully
+- Pass: Blockage is added successfully, and displayed 
 - Fail: Blockage does not appear or error occurs
 
 ---
@@ -303,7 +305,7 @@ The test cases validate:
 - Route is recalculated if applicable
 
 **Pass/Fail Criteria**:
-- Pass: Blockage removed correctly
+- Pass: Blockage removed correctly, new blockage list displayed
 - Fail: Blockage remains or errors occur
 
 ---

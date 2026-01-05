@@ -28,7 +28,7 @@ sequenceDiagram
             FE->>FE: Display latest blockage data on FE
 
         else Server Wait or Error
-            Server-->>FE: { "Wait" } or timeout/error
+            Server-->>FE: { "Wait" } or 500 timeout/error
             end
     end
 
@@ -49,7 +49,7 @@ sequenceDiagram
             FE-->>FE: Display latest Blockages
 
         else Server Wait or Error
-            Server-->>FE: { "Wait" } or timeout/error
+            Server-->>FE: { "Wait" } or 500 timeout/error
             end
     end
 
@@ -60,10 +60,11 @@ loop Every 1000ms Max 10 tries
     FE->>Server: GET /allAxisTypes
     
     alt Server Ready
-        Server-->>Server: POST /:RoadType
-        Server-->>FE: 200 OK + Data
+        Server-->>FE: 200 OK + Road Types List
+        FE-->>Server: POST /:RoadType
+        Server-->>FE: 200 OK + Each Road Types GEOJSON
     else Server Wait or Error
-        Server-->>FE: {"Wait"} or timeout/error
+        Server-->>FE: {"Wait"} or 500 timeout/error
         end
     end
 
@@ -71,7 +72,7 @@ loop Every 1000ms Max 10 tries
 
 Note over User, FE: View Road Type
     User->>FE: SELECT ROAD TYPE
-    FE->>FE: RENDER DATA ON MAP
+    FE->>FE: RENDER ROAD TYPE GEOJSON ON MAP
 
 %%--- 6. USER SEARCH ROUTE ---
 
@@ -79,12 +80,12 @@ Note over User, FE: Search Route
 User->>FE: Select Coordinates and Transport Type
 loop every 1000ms
     FE->>Server: POST /changeValidRoadTypes + selected transport type data
-    FE->>Server: POST /route + selected coordinates data
     
     alt Server Ready
+        FE->>Server: POST /route + selected coordinates data
         Server-->>FE: 200 OK + DATA
         FE-->>FE: Render data on map
     else Server Wait or Error
-        Server-->>FE: {"Wait"} or timeout/error
+        Server-->>FE: {"Wait"} or 500 timeout/error
         end
     end
