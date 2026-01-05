@@ -131,6 +131,7 @@ The test cases validate:
 - Route appears on the map
 - Route connects origin and destination
 - Route information popup is available
+- Route information displayed under route details
 
 **Pass/Fail Criteria**:
 - Pass: Route is displayed correctly
@@ -155,15 +156,34 @@ The test cases validate:
 **Expected Results**:
 - Routes differ by transport mode
 - Only allowed road types are used per mode
-- Map updates instantly
 
 **Pass/Fail Criteria**:
 - Pass: Correct routes per mode
 - Fail: Same route regardless of mode
 
 ---
+### TC-006: View Route Information
 
-### TC-006: Map Interaction – Pan & Zoom
+**Objective**: View route information.
+
+**User Story**: US-005
+
+**Pre-conditions**:
+- Routes are displayed
+
+**Test Steps**:
+1. View route details in the side bar, distance, road name and road type
+
+**Expected Results**:
+- Route information displayed in the panel
+
+**Pass/Fail Criteria**:
+- Pass: information displayed correctly
+- Fail: missing information
+
+---
+
+### TC-007: Map Interaction – Pan & Zoom
 
 **Objective**: Verify map navigation functionality.
 
@@ -188,7 +208,7 @@ The test cases validate:
 
 ---
 
-### TC-007: View Route & Road Feature Details
+### TC-008: View Route & Road Feature Details
 
 **Objective**: Verify popup information for routes and roads.
 
@@ -211,29 +231,31 @@ The test cases validate:
 - Fail: Popup missing or incorrect
 
 ---
+### TC-009: View Blockages
 
-### TC-008: View Route Information
+**Objective**: Verify that users can view blockages.
 
-**Objective**: View route information.
-
-**User Story**: US-005
+**User Story**: US-006
 
 **Pre-conditions**:
-- Routes are displayed
+- Server is ready
 
 **Test Steps**:
-1. View route details in the side bar, distance, road name and road type
+1. Open the application in a browser
+2. Observe the map
+3. Wait for automatic refresh (30 seconds)
 
 **Expected Results**:
-- Route information displayed in the panel
+- Blockage markers appears on map
+- Radius circle is shown
+- Blockage is added to the list
 
 **Pass/Fail Criteria**:
-- Pass: information displayed correctly
-- Fail: missing information
+- Pass: Blockage list update periodically
+- Fail: Blockage list did not get updated
 
 ---
-
-### TC-009: Add Blockage
+### TC-010: Add Blockage
 
 **Objective**: Verify that users can add a blockage.
 
@@ -259,7 +281,7 @@ The test cases validate:
 
 ---
 
-### TC-009: Delete Blockage
+### TC-011: Delete Blockage
 
 **Objective**: Verify that users can delete an existing blockage.
 

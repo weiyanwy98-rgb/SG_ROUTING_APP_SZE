@@ -18,13 +18,14 @@ sequenceDiagram
     end
 
     %% --- 2. USER FETCH ALL Blockage ---
-    loop Every 1000ms
+    
+    Loop Every 30s, each try 1000ms Max 10 tries
     Note over FE: FETCH BLOCKAGE
         FE->>Server: GET /blockage
 
         alt Server Ready
             Server-->>FE: 200 OK + DATA
-            FE->>FE: Display DATA on FE
+            FE->>FE: Display latest blockage data on FE
 
         else Server Wait or Error
             Server-->>FE: { "Wait" } or timeout/error
@@ -32,7 +33,7 @@ sequenceDiagram
     end
 
     %% --- 3. User Add/Delete Blockage---
-    loop Every 1000ms
+    loop Every 1000ms Max 10 tries
     %%--- Add Blockage ---
         Note over User,FE: ADD BLOCKAGE
         User->>FE: Select Coordinate and fill up details
@@ -45,6 +46,7 @@ sequenceDiagram
         alt Server Ready
             Server-->>Server: Update + GET /blockage
             Server-->>FE: 200 OK + Data
+            FE-->>FE: Display latest Blockages
 
         else Server Wait or Error
             Server-->>FE: { "Wait" } or timeout/error
@@ -53,7 +55,7 @@ sequenceDiagram
 
 %%--- 4. USER FETCH ROAD TYPES ---
 
-loop Every 1000ms
+loop Every 1000ms Max 10 tries
     Note over FE,Server: Fetch Road Types
     FE->>Server: GET /allAxisTypes
     
